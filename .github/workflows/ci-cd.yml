@@ -1,0 +1,90 @@
+name: CI/CD
+
+on:
+  push:
+  pull_request:
+
+env:
+  PYTHON_VERSION: "3.11"
+  GX_ANALYTICS_ENABLED: "False"
+
+jobs:
+  lint:
+    name: Линтинг (flake8 + black)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install flake8 black
+      - name: flake8
+        run: flake8 src tests scripts
+      - name: black --check
+        run: black --check --diff src tests scripts
+
+  test:
+    name: Unit-тесты (pytest)
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: pytest
+        run: pytest -v
+
+  data-validation:
+    name: Валидация данных (Great Expectations)
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Загрузка датасета с UCI
+        run: python -m src.data.download
+      - name: Great Expectations suite
+        run: python -m src.data.validation data/raw/UCI_Credit_Card.csv --report reports/data_validation.json
+      - name: Тест на аномалии в реальных данных
+        run: pytest tests/test_validation.py -v
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: data-validation-report
+          path: |
+            reports/data_validation.json
+            data/expectations/credit_data_suite.json
+
+  docker:
+    name: Сборка Docker-образа и smoke-тест API
+    runs-on: ubuntu-latest
+    needs: [test, data-validation]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Данные и быстрая модель для образа
+        run: |
+          python -m src.data.download
+          python -m src.data.make_dataset
+          python -m src.models.train --only logreg_fe
+      - name: docker build
+        run: docker build -t credit-default-api:${{ github.sha }} .
+      - name: docker run + проверка /predict
+        run: |
+          docker run -d --name api -p 8000:8000 credit-default-api:${{ github.sha }}
+          for i in $(seq 1 30); do curl -sf http://localhost:8000/health && break; sleep 1; done
+          python scripts/check_api.py --url http://localhost:8000
+      - name: Логи контейнера
+        if: always()
+        run: docker logs api || true
