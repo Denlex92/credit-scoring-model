@@ -16,3 +16,4 @@ mlflow.db
 
 # пересоздаваемые отчёты
 reports/predictions.csv
+reports/api_server*.log

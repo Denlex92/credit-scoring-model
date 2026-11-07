@@ -1,0 +1,22 @@
+﻿Источник предсказаний: API http://127.0.0.1:8000, записей: 500
+           variable    psi status
+default_probability 0.0168     OK
+          LIMIT_BAL 0.0188     OK
+                AGE 0.0275     OK
+              PAY_0 0.0031     OK
+          BILL_AMT1 0.0266     OK
+           PAY_AMT1 0.0140     OK
+Средняя P(default): train 0.222 -> новые 0.227; ROC-AUC на новых: 0.7347316879507709
+Итоговый статус: OK | отчёт: C:\Users\Denlex\PycharmProjects\magistratura\credit-scoring-model\reports\drift_report.json
+
+===== shift 0.6 =====
+Источник предсказаний: API http://127.0.0.1:8000, записей: 500
+           variable    psi  status
+default_probability 0.8857   ALERT
+          LIMIT_BAL 0.5785   ALERT
+                AGE 0.0275      OK
+              PAY_0 0.8325   ALERT
+          BILL_AMT1 0.0266      OK
+           PAY_AMT1 0.2124 WARNING
+Средняя P(default): train 0.222 -> новые 0.403; ROC-AUC на новых: 0.6356558371380048
+Итоговый статус: ALERT | отчёт: C:\Users\Denlex\PycharmProjects\magistratura\credit-scoring-model\reports\drift_report.json

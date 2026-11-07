@@ -1,0 +1,2 @@
+﻿GET /health -> 200 {'status': 'ok', 'model_name': 'random_forest_fe', 'threshold': 0.29323221539881505}
+POST /predict -> 200 {'default_prediction': 1, 'default_probability': 0.5525812258047869, 'threshold': 0.29323221539881505, 'model_name': 'random_forest_fe'}

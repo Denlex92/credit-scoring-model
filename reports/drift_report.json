@@ -1,6 +1,6 @@
 {
-  "timestamp": "2026-11-07T10:20:05+00:00",
-  "source": "local model",
+  "timestamp": "2026-11-07T12:44:11+00:00",
+  "source": "API http://127.0.0.1:8000",
   "n_samples": 500,
   "shift": 0.6,
   "mean_probability_reference": 0.2215485742255802,

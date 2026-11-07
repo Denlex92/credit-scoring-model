@@ -28,7 +28,8 @@ credit-scoring-model/
 │   ├── api/app.py            # FastAPI
 │   └── monitoring/           # drift.py (PSI), monitor.py (имитация потока + дрифт)
 ├── tests/                    # pytest: данные, признаки, пайплайн, метрики, GE, API, PSI
-├── scripts/                  # build_and_run.sh / .ps1, check_api.py, sample_request.json
+├── scripts/                  # build_and_run.sh/.ps1 (Docker), run_api_and_monitor.ps1 (API без Docker + мониторинг),
+│                             # check_api.py, sample_request.json
 ├── .github/workflows/ci-cd.yml
 ├── Dockerfile, dvc.yaml, params.yaml, requirements*.txt, pyproject.toml, .flake8
 ```
@@ -98,7 +99,10 @@ bash scripts/build_and_run.sh          # Windows: powershell -ExecutionPolicy By
 curl -X POST http://localhost:8000/predict -H "Content-Type: application/json" -d @scripts/sample_request.json
 # {"default_prediction":1,"default_probability":0.43,"threshold":0.23,"model_name":"..."}
 ```
-Без Docker: `uvicorn src.api.app:app --reload`.
+Без Docker: `uvicorn src.api.app:app --reload`, или одной командой поднять API, проверить его и прогнать мониторинг через API:
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run_api_and_monitor.ps1
+```
 
 ### 8. Мониторинг дрифта
 ```bash
@@ -140,8 +144,16 @@ PSI считается для распределения предсказанн�
 * `pytest`: **51 тест** (данные, Feature Engineering, пайплайн, метрики, Great Expectations, API, PSI), все проходят. `flake8` и `black --check` без замечаний.
 * GitHub Actions: lint → test и data-validation → docker (сборка образа и smoke-тест `/predict`).
 
+### Проверка API
+API поднят локально (`scripts/run_api_and_monitor.ps1`), ответы сохранены в `reports/api_check.txt`:
+```
+GET /health  -> 200 {'status': 'ok', 'model_name': 'random_forest_fe', 'threshold': 0.293}
+POST /predict -> 200 {'default_prediction': 1, 'default_probability': 0.553, 'threshold': 0.293, 'model_name': 'random_forest_fe'}
+```
+Docker-образ собирается и проверяется тем же запросом `/predict` в CI (джоба `docker`).
+
 ### Мониторинг дрифта
-500 записей из test прогоняются через модель и сравниваются с train:
+500 «новых заявок» из test отправляются **на REST API** (`POST /predict`, локальный uvicorn), полученные вероятности и признаки сравниваются с train. Лог — `reports/monitoring_log.txt`:
 
 | Переменная | PSI, обычные данные | PSI, имитация кризиса (`--shift 0.6`) |
 |---|---|---|
@@ -151,6 +163,7 @@ PSI считается для распределения предсказанн�
 | PAY_AMT1 | 0.014 — OK | 0.212 — WARNING |
 | AGE | 0.027 — OK | 0.027 — OK |
 | BILL_AMT1 | 0.027 — OK | 0.027 — OK |
+| Средняя P(default): train 0.222 → | 0.227 | 0.403 |
 | ROC-AUC на новых данных | 0.735 | 0.636 |
 
 На стабильных данных все PSI < 0.03. При сдвиге (лимиты ниже, просрочки чаще) мониторинг сигнализирует ALERT по изменённым признакам и по распределению скоров, а не изменявшиеся `AGE` и `BILL_AMT1` остаются в норме. Падение ROC-AUC подтверждает, что при таком алерте модель нужно переобучать.
