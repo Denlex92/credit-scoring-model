@@ -1,0 +1,200 @@
+schema: '2.0'
+stages:
+  validate:
+    cmd: python -m src.data.validation data/raw/UCI_Credit_Card.csv --report 
+      reports/data_validation.json
+    deps:
+    - path: data/raw/UCI_Credit_Card.csv
+      hash: md5
+      md5: cd0e988e3cc6c027538f8306e4a37c63
+      size: 2897209
+    - path: src/data/validation.py
+      hash: md5
+      md5: ed425f83246864d5ff3e63f326c5b63d
+      size: 6262
+    outs:
+    - path: data/expectations/credit_data_suite.json
+      hash: md5
+      md5: c9071c027ef8c1e3097f3a39f0a43070
+      size: 28150
+    - path: reports/data_validation.json
+      hash: md5
+      md5: e6e65a4aa1374bc2d0452f8dca1b449c
+      size: 129
+  prepare:
+    cmd: python -m src.data.make_dataset data/raw/UCI_Credit_Card.csv 
+      data/processed
+    deps:
+    - path: data/raw/UCI_Credit_Card.csv
+      hash: md5
+      md5: cd0e988e3cc6c027538f8306e4a37c63
+      size: 2897209
+    - path: reports/data_validation.json
+      hash: md5
+      md5: e6e65a4aa1374bc2d0452f8dca1b449c
+      size: 129
+    - path: src/data/make_dataset.py
+      hash: md5
+      md5: 310b079117b588e4ea223fb106358b27
+      size: 2739
+    params:
+      params.yaml:
+        split:
+          test_size: 0.2
+          random_state: 42
+    outs:
+    - path: data/processed/test.csv
+      hash: md5
+      md5: d34fc24fc9aee2862cd641529b24cc8d
+      size: 701537
+    - path: data/processed/train.csv
+      hash: md5
+      md5: 5f1975aa92c302debab6eb70f9810098
+      size: 2803853
+  train:
+    cmd: python -m src.models.train
+    deps:
+    - path: data/processed/test.csv
+      hash: md5
+      md5: d34fc24fc9aee2862cd641529b24cc8d
+      size: 701537
+    - path: data/processed/train.csv
+      hash: md5
+      md5: 5f1975aa92c302debab6eb70f9810098
+      size: 2803853
+    - path: src/features/build_features.py
+      hash: md5
+      md5: 58c539dc9a8c78c056e38e00e5ebac18
+      size: 2918
+    - path: src/models/metrics.py
+      hash: md5
+      md5: 19e1ab5e9e42a5785d97a99bccb93248
+      size: 3680
+    - path: src/models/pipeline.py
+      hash: md5
+      md5: 4d3ca47c4c59a482e9e5601b069c24c0
+      size: 2335
+    - path: src/models/train.py
+      hash: md5
+      md5: 3d0f76193c44bed9de7a8f98751b5235
+      size: 9357
+    params:
+      params.yaml:
+        train:
+          experiment_name: Credit_Default_Prediction
+          tracking_uri: sqlite:///mlflow.db
+          registered_model_name: CreditDefaultModel
+          model_path: models/credit_default_model.pkl
+          meta_path: models/model_meta.json
+          metrics_path: reports/metrics.json
+          cv_folds: 3
+          scoring: roc_auc
+          random_state: 42
+          experiments:
+          - name: logreg_raw
+            model: logreg
+            feature_engineering: false
+            search: grid
+            params:
+              C:
+              - 0.01
+              - 0.1
+              - 1.0
+          - name: logreg_fe
+            model: logreg
+            feature_engineering: true
+            search: grid
+            params:
+              C:
+              - 0.01
+              - 0.1
+              - 1.0
+          - name: logreg_fe_balanced
+            model: logreg
+            feature_engineering: true
+            search: grid
+            params:
+              C:
+              - 0.01
+              - 0.1
+              - 1.0
+              class_weight:
+              - balanced
+          - name: random_forest_fe
+            model: random_forest
+            feature_engineering: true
+            search: random
+            n_iter: 8
+            params:
+              n_estimators:
+              - 200
+              - 400
+              max_depth:
+              - 6
+              - 10
+              - 14
+              min_samples_leaf:
+              - 5
+              - 20
+              - 50
+              max_features:
+              - sqrt
+              - 0.3
+          - name: gradient_boosting_fe
+            model: gradient_boosting
+            feature_engineering: true
+            search: grid
+            params:
+              learning_rate:
+              - 0.05
+              - 0.1
+              n_estimators:
+              - 150
+              - 300
+              max_depth:
+              - 2
+              - 3
+              subsample:
+              - 0.8
+          - name: hist_gradient_boosting_fe
+            model: hist_gradient_boosting
+            feature_engineering: true
+            search: random
+            n_iter: 10
+            params:
+              learning_rate:
+              - 0.03
+              - 0.05
+              - 0.1
+              max_leaf_nodes:
+              - 15
+              - 31
+              - 63
+              min_samples_leaf:
+              - 20
+              - 50
+              - 100
+              l2_regularization:
+              - 0.0
+              - 1.0
+    outs:
+    - path: models/credit_default_model.pkl
+      hash: md5
+      md5: eee54c8982b9f4a89a17c91802ad22a2
+      size: 13065163
+    - path: models/model_meta.json
+      hash: md5
+      md5: 1003a726bdae2c896c139d87ba6ffeba
+      size: 1038
+    - path: reports/figures/confusion_matrix.png
+      hash: md5
+      md5: 125284b32840c8fd10ab4528a741fd46
+      size: 17748
+    - path: reports/figures/roc_curve.png
+      hash: md5
+      md5: 4447d2b36577524860afde8b5fe5c976
+      size: 45314
+    - path: reports/metrics.json
+      hash: md5
+      md5: 8817fb17a152f8e1223f45abe039306b
+      size: 453

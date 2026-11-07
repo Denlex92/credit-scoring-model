@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Данные и модели не коммитятся в git: их версионирует DVC
+# (dvc add / outs в dvc.yaml сами дописывают нужные пути в .gitignore)
+
+# MLflow
+mlruns/
+mlartifacts/
+mlflow.db
+
+# пересоздаваемые отчёты
+reports/predictions.csv

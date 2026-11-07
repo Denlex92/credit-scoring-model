@@ -1,0 +1,14 @@
+[project]
+name = "credit-scoring-model"
+version = "1.0.0"
+description = "Автоматизированный пайплайн PD-модели (Default of Credit Card Clients)"
+requires-python = ">=3.10"
+
+[tool.black]
+line-length = 120
+target-version = ["py310", "py311", "py312"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+filterwarnings = ["ignore::DeprecationWarning", "ignore::FutureWarning"]

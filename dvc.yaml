@@ -1,0 +1,47 @@
+stages:
+  validate:
+    cmd: python -m src.data.validation data/raw/UCI_Credit_Card.csv --report reports/data_validation.json
+    deps:
+      - src/data/validation.py
+      - data/raw/UCI_Credit_Card.csv
+    outs:
+      - data/expectations/credit_data_suite.json:
+          cache: false
+    metrics:
+      - reports/data_validation.json:
+          cache: false
+
+  prepare:
+    cmd: python -m src.data.make_dataset data/raw/UCI_Credit_Card.csv data/processed
+    deps:
+      - src/data/make_dataset.py
+      - data/raw/UCI_Credit_Card.csv
+      - reports/data_validation.json
+    params:
+      - split
+    outs:
+      - data/processed/train.csv
+      - data/processed/test.csv
+
+  train:
+    cmd: python -m src.models.train
+    deps:
+      - src/models/train.py
+      - src/models/pipeline.py
+      - src/models/metrics.py
+      - src/features/build_features.py
+      - data/processed/train.csv
+      - data/processed/test.csv
+    params:
+      - train
+    outs:
+      - models/credit_default_model.pkl
+      - models/model_meta.json
+    metrics:
+      - reports/metrics.json:
+          cache: false
+    plots:
+      - reports/figures/roc_curve.png:
+          cache: false
+      - reports/figures/confusion_matrix.png:
+          cache: false
