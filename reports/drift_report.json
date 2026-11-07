@@ -1,0 +1,43 @@
+{
+  "timestamp": "2026-11-07T10:20:05+00:00",
+  "source": "local model",
+  "n_samples": 500,
+  "shift": 0.6,
+  "mean_probability_reference": 0.2215485742255802,
+  "mean_probability_current": 0.4033117680104221,
+  "predicted_default_rate": 0.548,
+  "roc_auc_current": 0.6356558371380048,
+  "psi": [
+    {
+      "variable": "default_probability",
+      "psi": 0.8857248231446723,
+      "status": "ALERT"
+    },
+    {
+      "variable": "LIMIT_BAL",
+      "psi": 0.5784992282663812,
+      "status": "ALERT"
+    },
+    {
+      "variable": "AGE",
+      "psi": 0.02746606885932585,
+      "status": "OK"
+    },
+    {
+      "variable": "PAY_0",
+      "psi": 0.8325130372205047,
+      "status": "ALERT"
+    },
+    {
+      "variable": "BILL_AMT1",
+      "psi": 0.02663303005337533,
+      "status": "OK"
+    },
+    {
+      "variable": "PAY_AMT1",
+      "psi": 0.21238061657055615,
+      "status": "WARNING"
+    }
+  ],
+  "overall_status": "ALERT"
+}

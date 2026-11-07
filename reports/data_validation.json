@@ -1,0 +1,6 @@
+{
+  "success": true,
+  "evaluated_expectations": 98,
+  "failed_expectations": [],
+  "path": "data/raw/UCI_Credit_Card.csv"
+}
